@@ -33,6 +33,8 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
+	implementation 'net.coobird:thumbnailator:0.4.20'
+
 }
 
 tasks.named('test') {
