@@ -4,7 +4,12 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,10 +31,10 @@ public class CustomFileUtil {
     private String uploadPath;
 
     @PostConstruct
-    public void init(){
+    public void init() {
         File tempFolder = new File(uploadPath);
 
-        if(!tempFolder.exists()){
+        if (!tempFolder.exists()) {
             tempFolder.mkdir();
         }
 
@@ -41,7 +46,7 @@ public class CustomFileUtil {
     }
 
     public List<String> saveFiles(List<MultipartFile> files) throws RuntimeException {
-        if(files == null || files.isEmpty()){
+        if (files == null || files.isEmpty()) {
             return List.of();
         }
 
@@ -52,7 +57,7 @@ public class CustomFileUtil {
 
             Path savePath = Paths.get(uploadPath, savedName);
 
-            try{
+            try {
                 Files.copy(file.getInputStream(), savePath);
 
                 // 파일 타입 확인
@@ -76,4 +81,48 @@ public class CustomFileUtil {
 
 
     }
+
+    // 파일 Resource로 반환
+    public ResponseEntity<Resource> getFile(String fileName) {
+        Resource resource = new FileSystemResource(uploadPath + File.separator + fileName);
+
+        if (!resource.isReadable()) {
+            resource = new FileSystemResource(uploadPath + File.separator + "default.jpg");
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+
+        try {
+            headers.add("Content-Type", Files.probeContentType(resource.getFile().toPath()));
+        } catch (IOException e) {
+            return ResponseEntity.ok().headers(headers).body(resource);
+        }
+
+        return ResponseEntity.ok().headers(headers).body(resource);
+
+    }
+
+    // 파일 삭제
+    public void deleteFiles(List<String> fileNames) {
+        // List가 비어있으면 return
+        if (fileNames == null || fileNames.isEmpty()) {
+            return;
+        }
+
+        fileNames.forEach(fileName -> {
+            // 이미지라면 썸네일도 함께 삭제
+            String thumbnailFileName = "s_" + fileName;
+
+            Path thumbnailPath = Paths.get(uploadPath, thumbnailFileName);
+            Path filePath = Paths.get(uploadPath, fileName);
+
+            try {
+                Files.deleteIfExists(thumbnailPath);
+                Files.deleteIfExists(filePath);
+            } catch (IOException e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        });
+    }
+
 }
