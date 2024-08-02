@@ -3,10 +3,12 @@ package com.zerock.mallapi.config;
 import com.zerock.mallapi.security.filter.JWTCheckFilter;
 import com.zerock.mallapi.security.handler.APILoginFailHandler;
 import com.zerock.mallapi.security.handler.APILoginSuccessHandler;
+import com.zerock.mallapi.security.handler.CustomAccessDeniedHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -25,6 +27,7 @@ import java.util.List;
 @Configuration
 @Slf4j
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class CustomSecurityConfig {
 
     @Bean
@@ -47,6 +50,8 @@ public class CustomSecurityConfig {
         });
 
         http.addFilterBefore(new JWTCheckFilter(), UsernamePasswordAuthenticationFilter.class); // JWT 체크
+
+        http.exceptionHandling(config -> config.accessDeniedHandler(new CustomAccessDeniedHandler()));
 
         return http.build();
     }

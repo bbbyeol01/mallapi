@@ -1,16 +1,20 @@
 package com.zerock.mallapi.security.filter;
 
 import com.google.gson.Gson;
+import com.zerock.mallapi.dto.MemberDTO;
 import com.zerock.mallapi.util.JWTUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -55,7 +59,25 @@ public class JWTCheckFilter extends OncePerRequestFilter {
 
             log.info("JWT claims : {}", claims);
 
-            filterChain.doFilter(request, response); // 통과
+//            filterChain.doFilter(request, response); // 통과
+
+            String email = (String) claims.get("email");
+            String pw = (String) claims.get("pw");
+            String nickname = (String) claims.get("nickname");
+            Boolean social = (Boolean) claims.get("social");
+            List<String> roleNames = (List<String>) claims.get("roleNames");
+
+            MemberDTO memberDTO = new MemberDTO(email, pw, nickname, social, roleNames);
+
+            log.info("------------------------------");
+            log.info("memberDTO : {}", memberDTO);
+            log.info("memberDTO.getAuthorities() :{}", memberDTO.getAuthorities());
+
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(memberDTO, pw, memberDTO.getAuthorities());
+
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+            filterChain.doFilter(request, response);
 
         } catch (Exception e) {
             log.error("JWT Check Error....................");
